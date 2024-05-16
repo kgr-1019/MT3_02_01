@@ -40,6 +40,9 @@ Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, f
 Vector3 Transform(const Vector3& point, const Matrix4x4& transformMatrix);
 // 衝突判定
 bool IsCollision(const Sphere& s1, const Sphere& s2);
+// 長さ（ノルム）
+float Length(const Vector3& v1);
+
 
 
 // 関数の定義
@@ -274,10 +277,21 @@ Vector3 Transform(const Vector3& point, const Matrix4x4& transformMatrix)
 	return result;
 }
 
+// 長さ（ノルム）
+float Length(const Vector3& v1)
+{
+	float length = sqrtf(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+	return length;
+}
+
 // 衝突判定
 bool IsCollision(const Sphere& s1, const Sphere& s2) 
 {
+	float distance{};
 
+	distance = Length(s2.center - s1.center);
+
+	return distance;
 }
 
 
@@ -467,7 +481,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowsWidth), float(kWindowsHeight), 0.0f, 1.0f);
 
-		
 
 		// グリッド
 		DrawGrid(worldViewProjectionMatrix, viewportMatrix);
