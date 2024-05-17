@@ -18,8 +18,7 @@ struct Sphere
 
 
 // プロトタイプ宣言
-//void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
-void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
+
 // X軸回転行列
 Matrix4x4 MakeRotateXMatrix(const Vector3& rotate);
 // Y軸回転行列
@@ -38,10 +37,15 @@ Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip
 Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);
 // 座標変換
 Vector3 Transform(const Vector3& point, const Matrix4x4& transformMatrix);
-// 衝突判定
-bool IsCollision(const Sphere& s1, const Sphere& s2);
 // 長さ（ノルム）
 float Length(const Vector3& v1);
+// 衝突判定
+bool IsCollision(const Sphere& s1, const Sphere& s2, bool isCollision);
+// グリッド
+void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
+// スフィア
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
 
 
 
@@ -277,7 +281,7 @@ Vector3 Transform(const Vector3& point, const Matrix4x4& transformMatrix)
 	return result;
 }
 
-// 長さ（ノルム）
+// 球と球の距離(内積)
 float Length(const Vector3& v1)
 {
 	float length = sqrtf(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
@@ -285,16 +289,22 @@ float Length(const Vector3& v1)
 }
 
 // 衝突判定
-bool IsCollision(const Sphere& s1, const Sphere& s2) 
+bool IsCollision(const Sphere& s1, const Sphere& s2, bool isCollision)
 {
 	float distance{};
 
-	distance = Length(s2.center - s1.center);
+	Vector3 result = { s2.center.x - s1.center.x, s2.center.y - s1.center.y,s2.center.z - s1.center.z };
 
-	return distance;
+	distance = Length(result);
+
+	if (distance <= s1.radius + s2.radius)
+	{
+		// 当たっていたらフラグオン
+		isCollision = true;
+	}
+
+	return isCollision;
 }
-
-
 
 // Gridを表示する疑似コード
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix)
@@ -358,7 +368,7 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 }
 
 // Sphereを表示する疑似コード
-void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix)
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix,uint32_t color)
 {
 	float pi = float(M_PI);
 	const uint32_t kSubdivision = 20;// 分割数
@@ -416,8 +426,8 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 
 			// ab,acで線を引く
-			Novice::DrawLine((int)screenVerticesA.x, (int)screenVerticesA.y, (int)screenVerticesB.x, (int)screenVerticesB.y, BLACK);
-			Novice::DrawLine((int)screenVerticesA.x, (int)screenVerticesA.y, (int)screenVerticesC.x, (int)screenVerticesC.y, BLACK);
+			Novice::DrawLine((int)screenVerticesA.x, (int)screenVerticesA.y, (int)screenVerticesB.x, (int)screenVerticesB.y, color);
+			Novice::DrawLine((int)screenVerticesA.x, (int)screenVerticesA.y, (int)screenVerticesC.x, (int)screenVerticesC.y, color);
 		}
 	}
 }
@@ -434,7 +444,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	char keys[256] = {0};
 	char preKeys[256] = {0};
 
-
+	// スフィアの定義
 	Sphere sphere[2]{};
 	sphere[0] = {
 		{0.0f,0.0f,0.0f},
@@ -445,6 +455,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		0.4f,
 	};
 
+	// スフィアの色
+	int color = WHITE;
+	// 当たり判定
+	bool isCollision = false;
+
+
 	// 画面サイズ
 	float kWindowsWidth = 1280.0f;
 	float kWindowsHeight = 720.0f;
@@ -454,7 +470,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraScale{ 1.0f,1.0f,1.0f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };// カメラの位置
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };// カメラの角度
-	
 	
 
 	// ウィンドウの×ボタンが押されるまでループ
@@ -481,13 +496,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowsWidth), float(kWindowsHeight), 0.0f, 1.0f);
 
+		// 当たり判定
+		isCollision=IsCollision(sphere[0], sphere[1], isCollision);
+		
+		if (isCollision)
+		{
+			// あたってたら赤色になる
+			color = RED;
+		}
 
 		// グリッド
 		DrawGrid(worldViewProjectionMatrix, viewportMatrix);
 		// スフィア
-		DrawSphere(sphere[0], worldViewProjectionMatrix, viewportMatrix);
-		DrawSphere(sphere[1], worldViewProjectionMatrix, viewportMatrix);
+		DrawSphere(sphere[0], worldViewProjectionMatrix, viewportMatrix, color);
+		DrawSphere(sphere[1], worldViewProjectionMatrix, viewportMatrix,WHITE);
 
+		
 
 		///
 		/// ↑更新処理ここまで
