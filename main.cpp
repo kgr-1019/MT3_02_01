@@ -289,7 +289,7 @@ float Length(const Vector3& v1)
 }
 
 // 衝突判定
-bool IsCollision(const Sphere& s1, const Sphere& s2, bool isCollision)
+bool IsCollision(const Sphere& s1, const Sphere& s2)
 {
 	float distance{};
 
@@ -300,10 +300,13 @@ bool IsCollision(const Sphere& s1, const Sphere& s2, bool isCollision)
 	if (distance <= s1.radius + s2.radius)
 	{
 		// 当たっていたらフラグオン
-		isCollision = true;
+		return  true;
+	}
+	else {
+		return false;
 	}
 
-	return isCollision;
+	
 }
 
 // Gridを表示する疑似コード
@@ -389,21 +392,21 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 			// ワールド座標系での頂点を求める
 			a = {
-				(sphere.center.x + sphere.radius) * std::cos(lat) * std::cos(lon),
-				(sphere.center.y + sphere.radius) * std::sin(lat),
-				(sphere.center.z + sphere.radius) * std::cos(lat) * std::sin(lon)
+				(sphere.radius) * std::cos(lat) * std::cos(lon)+ sphere.center.x,
+				(sphere.radius) * std::sin(lat)+ sphere.center.y,
+				(sphere.radius) * std::cos(lat) * std::sin(lon)+ sphere.center.z
 			};
 
 			b = {
-				(sphere.center.x + sphere.radius) * std::cos(lat + kLatEvery) * std::cos(lon),
-				(sphere.center.y + sphere.radius) * std::sin(lat + kLatEvery),
-				(sphere.center.z + sphere.radius) * std::cos(lat + kLatEvery) * std::sin(lon)
+				(sphere.radius) * std::cos(lat + kLatEvery) * std::cos(lon)+ sphere.center.x,
+				(sphere.radius) * std::sin(lat + kLatEvery)+ sphere.center.y,
+				(sphere.radius) * std::cos(lat + kLatEvery) * std::sin(lon)+ sphere.center.z
 			};
 
 			c = {
-				(sphere.center.x + sphere.radius) * std::cos(lat) * std::cos(lon + kLonEvery),
-				(sphere.center.y + sphere.radius) * std::sin(lat),
-				(sphere.center.z + sphere.radius) * std::cos(lat) * std::sin(lon + kLonEvery)
+				(sphere.radius) * std::cos(lat) * std::cos(lon + kLonEvery)+ sphere.center.x,
+				(sphere.radius) * std::sin(lat)+ sphere.center.y,
+				(sphere.radius) * std::cos(lat) * std::sin(lon + kLonEvery)+ sphere.center.z
 			};
 
 			// a,b,cをScreen座標系まで変換
@@ -457,8 +460,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// スフィアの色
 	int color = WHITE;
-	// 当たり判定
-	bool isCollision = false;
 
 
 	// 画面サイズ
@@ -497,12 +498,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowsWidth), float(kWindowsHeight), 0.0f, 1.0f);
 
 		// 当たり判定
-		isCollision=IsCollision(sphere[0], sphere[1], isCollision);
-		
-		if (isCollision)
+		if (IsCollision(sphere[0], sphere[1]))
 		{
 			// あたってたら赤色になる
 			color = RED;
+		}
+		else {
+			color =WHITE;
 		}
 
 		// グリッド
